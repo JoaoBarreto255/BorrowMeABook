@@ -1,60 +1,35 @@
 '''
 Create local database.
 '''
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
+from sqlalchemy import MetaData, Table, Column
+from sqlalchemy import Integer, String, Date, ForeignKey
 
-BOOK_TABLE = '''CREATE TABLE books
-( id INTEGER PRIMARY KEY AUTOINCREMENT,
-  title VARCHAR NOT NULL,
-  isbn VARCHAR NOT NULL,
-  author VARCHAR NOT NULL,
-  capa VARCHAR,
-  published_at DATE
-);
-'''
-PEOPLE_TABLE = '''CREATE TABLE people
-( id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name VARCHAR NOT NULL,
-  age INT NOT NULL DEFAULT 5
-);
-'''
-BOOK_OWNERS = '''CREATE TABLE book_owners
-( id INTEGER PRIMARY KEY AUTOINCREMENT,
-  book_id INTEGER,
-  person_id INTEGER,
-  CONSTRAINT fk_books
-    FOREIGN KEY (book_id)
-    REFERENCES books(id)
-    ON DELETE CASCADE,
-  CONSTRAINT fk_people
-    FOREIGN KEY (person_id)
-    REFERENCES people(id)
-    ON DELETE CASCADE
-);
-'''
-BORROWED_BOOKS = '''CREATE TABLE borrowed_books
-( owner_id INTEGER,
-  borrower_id INTEGER,
-  CONSTRAINT fk_owners
-    FOREIGN KEY (owner_id)
-    REFERENCES book_owners(id)
-    ON DELETE CASCADE,
-  CONSTRAINT fk_people
-    FOREIGN KEY (borrower_id)
-    REFERENCES people(id)
-    ON DELETE CASCADE
-);
-'''
+meta = MetaData()
+BOOKS = Table('books', meta, 
+  Column('id', Integer, primary_key=True),
+  Column('title', String, nullable=False),
+  Column('isbn', String),
+  Column('capa', String),
+  Column('published_at', Date))
+PEOPLE = Table('people', meta,
+  Column('id', Integer, primary_key=True),
+  Column('name', String, nullable=False),
+  Column('age', Integer, primary_key=True))
+BOOK_OWNERS = Table('book_owners', meta,
+  Column('id', Integer, primary_key=True),
+  Column('book_id', ForeignKey('books.id', ondelete='cascade')),
+  Column('person_id', ForeignKey('people.id', ondelete='cascade')))
+BORROWED_BOOKS = Table('borrowed_books', meta,
+  Column('owner_id', ForeignKey('book_owners.id', ondelete='cascade')),
+  Column('borrower_id', ForeignKey('people.id', ondelete='cascade')))
+
 
 
 def start():
     '''Create database tables'''
     engine = create_engine('sqlite://test.db')
-    with engine.begin() as conn:
-        conn.execute(text(BOOK_TABLE))
-        conn.execute(text(PEOPLE_TABLE))
-        conn.execute(text(BOOK_OWNERS))
-        conn.execute(text(BORROWED_BOOKS))
+    meta.create_all(engine)
 
 
 if __name__ == '__main__':
