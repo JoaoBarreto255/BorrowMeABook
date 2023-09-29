@@ -4,7 +4,7 @@ Create local database.
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData, Table, Column
 from sqlalchemy import Integer, String, Date, ForeignKey
-from entities import Book, OwnedBook, Person
+from model.models import Book, OwnedBook, Person
 
 meta = MetaData()
 BOOKS = Table(
