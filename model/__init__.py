@@ -1,2 +1,2 @@
-from model.models import Book, Person, OwnedBook
-from model.repo import Repo
+from .models import Book, Person, OwnedBook
+from .repo import Repo

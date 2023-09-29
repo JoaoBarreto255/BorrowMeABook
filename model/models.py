@@ -27,6 +27,10 @@ class Book(BaseModel):
         book_id, title, isbn, cover, pub_at = result
         return cls(book_id, title, isbn, cover, pub_at)
 
+    def to_dict(self) -> dict:
+        {'id': self.id, 'title': self.title, 'isbn': self.isbn,
+            'cover': self.cover, 'published_at': self.published_at.ctime()}
+
 
 class Person(BaseModel):
     """
