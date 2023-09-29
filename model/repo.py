@@ -45,11 +45,14 @@ BORROWED_BOOKS = Table(
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 meta.create_all(engine)
 
+
 async def app_startup():
     await database.connect()
 
+
 async def app_close():
     await database.disconnect()
+
 
 class BookRepo:
     def __init__(self):
@@ -80,20 +83,23 @@ class BookRepo:
         )
         last_row_id = await database.execute(query)
 
-        return {
-            **book.model_dump(),
-            'id': last_row_id
-        }
+        return {**book.model_dump(), "id": last_row_id}
 
     async def update_book(self, book: Book) -> dict:
         """Update one book.
         :params kargs: dict where keys are name from fields to update.
         """
         assert book.id and book.id > 0, "No book available!"
-        query = BOOKS.update().where(BOOKS.c.id == book.id).values(
-            title = book.title, isbn = book.isbn,
-            cover = book.cover, published_at = book.published_at 
+        query = (
+            BOOKS.update()
+            .where(BOOKS.c.id == book.id)
+            .values(
+                title=book.title,
+                isbn=book.isbn,
+                cover=book.cover,
+                published_at=book.published_at,
             )
+        )
         await database.execute(query)
         return book.model_dump()
 
