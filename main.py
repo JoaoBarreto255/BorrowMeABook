@@ -29,6 +29,11 @@ async def get_all_books():
     """fetch all books"""
     return await book_repo.get_all_books()
 
+@app.get('/books/{book_id}')
+async def get_one_book(book_id: int) -> Book:
+    """fetch one book"""
+    return await book_repo.get_one_book(book_id)
+
 @app.post('/books')
 async def create_book(book: Book) -> Book:
     book.id = None
