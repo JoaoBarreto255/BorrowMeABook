@@ -4,7 +4,7 @@ Create local database.
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData, Table, Column
 from sqlalchemy import Integer, String, Date, ForeignKey
-from model.models import Book, OwnedBook, Person
+from models import Book, OwnedBook, Person
 
 meta = MetaData()
 BOOKS = Table(
@@ -48,7 +48,7 @@ class Repo:
     @classmethod
     def _get_connection(cls):
         if cls._engine is None and cls._conn is None:
-            cls._engine = create_engine("sqlite://test.db")
+            cls._engine = create_engine("sqlite:///test.db")
             cls._conn = cls._engine.connect()
         return cls._conn
 
@@ -99,7 +99,7 @@ class Repo:
 
 def _start():
     """Create database tables"""
-    engine = create_engine("sqlite://test.db")
+    engine = create_engine("sqlite:///test.db")
     meta.create_all(engine)
 
 
