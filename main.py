@@ -4,15 +4,20 @@
 Simple api is a api for serve list of books shared with colleague
 '''
 
-# from typing import Union
-import asyncio
 from fastapi import FastAPI
-from hypercorn.config import Config
-from hypercorn.asyncio import serve
-from model import Repo, Book
+from model import app_startup, app_close
+from model import Book, BookRepo
 
 app = FastAPI()
-repo = Repo()
+book_repo = BookRepo()
+
+@app.on_event("startup")
+async def startup():
+    await app_startup()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await app_close()
 
 @app.get('/hello')
 async def read_hello():
@@ -22,15 +27,9 @@ async def read_hello():
 @app.get('/books')
 async def get_all_books():
     """fetch all books"""
-
-    return [
-        b for b in repo.get_all_books()
-    ]
+    return await book_repo.get_all_books()
 
 @app.post('/books')
 async def create_book(book: Book) -> Book:
-    created = repo.create_book(book)
-    return created
-
-if __name__ == '__main__':
-    asyncio.run(serve(app, Config()))
+    book.id = None
+    return await book_repo.create_book(book)
