@@ -90,12 +90,16 @@ class BookRepo:
         :params kargs: dict where keys are name from fields to update.
         """
         assert book.id and book.id > 0, "No book available!"
-        book_dict = book.model_dump()
-        for k, v in book_dict.items():
-            if v is not None or k == 'id':
-                continue
-            book_dict.pop(k)
-
-        query = BOOKS.update().where(BOOKS.c.id == book.id).values(**book_dict)
+        query = BOOKS.update().where(BOOKS.c.id == book.id).values(
+            title = book.title, isbn = book.isbn,
+            cover = book.cover, published_at = book.published_at 
+            )
         await database.execute(query)
         return book.model_dump()
+
+    async def delete_book(self, book_id: int) -> bool:
+        """Delete book from library"""
+        assert book_id and book_id > 0, "No book available!"
+        query = BOOKS.delete().where(BOOKS.c.id == book_id)
+        result = await database.execute(query)
+        assert result, "Could not delete book"
