@@ -1,10 +1,15 @@
 """
 Create local database.
 """
+import databases
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData, Table, Column
 from sqlalchemy import Integer, String, Date, ForeignKey
 from .models import Book, OwnedBook, Person
+
+DATABASE_URL = "sqlite:///test.db"
+
+database = databases.Database(DATABASE_URL)
 
 meta = MetaData()
 BOOKS = Table(
@@ -37,75 +42,60 @@ BORROWED_BOOKS = Table(
     Column("borrower_id", ForeignKey("people.id", ondelete="cascade")),
 )
 
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+meta.create_all(engine)
 
-class Repo:
-    _engine = None
-    _conn = None
+async def app_startup():
+    await database.connect()
 
-    BOOK_FIELDS = ['id', 'title', 'isbn', 'cover', 'published_at']
+async def app_close():
+    await database.disconnect()
 
+class BookRepo:
     def __init__(self):
-        self.__conn = Repo._get_connection()
+        super().__init__()
 
-    @classmethod
-    def _get_connection(cls):
-        if cls._engine is None and cls._conn is None:
-            cls._engine = create_engine("sqlite:///test.db")
-            cls._conn = cls._engine.connect()
-        return cls._conn
-
-    def get_all_books(self) -> list:
+    async def get_all_books(self) -> list:
         """fetch from database all books"""
-        stmt = BOOKS.select()
-        results = self.__conn.execute(stmt)
-        return [dict(zip(self.BOOK_FIELDS, r)) for r in results.fetchall()]
+        query = BOOKS.select()
+        return await database.fetch_all(query)
 
-    def get_book(self, book_id: int) -> Book:
+    async def get_one_book(self, book_id: int):
         """
         get one book
         :param book_id: db book key
         """
-        res = self.__conn.execute(BOOKS.select().where(BOOKS.c.id == book_id))
-        return dict(zip(self.BOOK_FIELDS,res.fetchone()))
+        query = BOOKS.select().where(BOOKS.c.id == book_id)
+        return await database.fetch_one(query)
 
-    def create_book(self, book: Book) -> Book:
+    async def create_book(self, book: Book) -> dict:
         """Insert one book in db
-        :param book: Book
+        :param book: new Book from catalog.
         """
-        stmt = BOOKS.insert().values(
+        query = BOOKS.insert().values(
             title=book.title,
             isbn=book.isbn,
             cover=book.cover,
             published_at=book.published_at,
         )
-        res = self.__conn.execute(stmt)
-        self.__conn.commit()
-        return self.get_book(res.inserted_primary_key[0])
+        last_row_id = await database.execute(query)
 
-    def update_book(self, **kargs) -> Book:
+        return {
+            **book.model_dump(),
+            'id': last_row_id
+        }
+
+    async def update_book(self, book: Book) -> dict:
         """Update one book.
         :params kargs: dict where keys are name from fields to update.
         """
-        assert (
-            kargs and (b_id := kargs.get("id")) and len(kargs) > 0
-        ), "No book to update!"
-        book = {
-            (k, v)
-            for k, v in kargs.items()
-            if v and k in ["title", "isbn", "cover", "published_at"]
-        }
-        stmt = BOOKS.update().where(BOOKS.c.id == b_id).values(book)
-        res = self.__conn.execute(stmt)
-        self.__conn.commit()
-        assert res.lastrowid, "Sorry! could not update that book"
-        return self.get_book(b_id)
+        assert book.id and book.id > 0, "No book available!"
+        book_dict = book.model_dump()
+        for k, v in book_dict.items():
+            if v is not None or k == 'id':
+                continue
+            book_dict.pop(k)
 
-
-def _start():
-    """Create database tables"""
-    engine = create_engine("sqlite:///test.db")
-    meta.create_all(engine)
-
-
-if __name__ == "__main__":
-    _start()
+        query = BOOKS.update().where(BOOKS.c.id == book.id).values(**book_dict)
+        await database.execute(query)
+        return book.model_dump()
