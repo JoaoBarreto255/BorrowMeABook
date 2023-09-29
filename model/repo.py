@@ -42,6 +42,8 @@ class Repo:
     _engine = None
     _conn = None
 
+    BOOK_FIELDS = ['id', 'title', 'isbn', 'cover', 'published_at']
+
     def __init__(self):
         self.__conn = Repo._get_connection()
 
@@ -56,7 +58,7 @@ class Repo:
         """fetch from database all books"""
         stmt = BOOKS.select()
         results = self.__conn.execute(stmt)
-        return [Book.create_from_result(r) for r in results]
+        return [dict(zip(self.BOOK_FIELDS, r)) for r in results.fetchall()]
 
     def get_book(self, book_id: int) -> Book:
         """
@@ -64,7 +66,7 @@ class Repo:
         :param book_id: db book key
         """
         res = self.__conn.execute(BOOKS.select().where(BOOKS.c.id == book_id))
-        return Book.create_from_result(res.fetchone())
+        return dict(zip(self.BOOK_FIELDS,res.fetchone()))
 
     def create_book(self, book: Book) -> Book:
         """Insert one book in db
@@ -77,7 +79,8 @@ class Repo:
             published_at=book.published_at,
         )
         res = self.__conn.execute(stmt)
-        return self.get_book(res.inserted_primary_key)
+        self.__conn.commit()
+        return self.get_book(res.inserted_primary_key[0])
 
     def update_book(self, **kargs) -> Book:
         """Update one book.
@@ -93,6 +96,7 @@ class Repo:
         }
         stmt = BOOKS.update().where(BOOKS.c.id == b_id).values(book)
         res = self.__conn.execute(stmt)
+        self.__conn.commit()
         assert res.lastrowid, "Sorry! could not update that book"
         return self.get_book(b_id)
 

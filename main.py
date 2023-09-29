@@ -22,8 +22,9 @@ async def read_hello():
 @app.get('/books')
 async def get_all_books():
     """fetch all books"""
+
     return [
-        b.to_dict() for b in repo.get_all_books()
+        b for b in repo.get_all_books()
     ]
 
 @app.post('/books')

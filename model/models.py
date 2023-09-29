@@ -7,29 +7,15 @@ from pydantic import BaseModel
 
 
 class Book(BaseModel):
-    """
-    type Book: Books template for been owned and borrowed beteen person.
-    :field id: api access key
-    :field title: name from book
-    :field isbn: book id
-    :field capa: book cover url.
-    :field published_at: day when the book as first released tu public
-    """
-
-    id: int
+    id: int | None = None
     title: str
-    isbn: str | None
-    cover: str | None
-    published_at: datetime | None
-
-    @classmethod
-    def create_from_result(cls, result):
-        book_id, title, isbn, cover, pub_at = result
-        return cls(book_id, title, isbn, cover, pub_at)
+    isbn: str | None = None
+    cover: str | None = None
+    published_at: datetime | None = None
 
     def to_dict(self) -> dict:
         {'id': self.id, 'title': self.title, 'isbn': self.isbn,
-            'cover': self.cover, 'published_at': self.published_at.ctime()}
+            'cover': self.cover, 'published_at': self.published_at and self.published_at.ctime()}
 
 
 class Person(BaseModel):
