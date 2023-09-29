@@ -5,6 +5,7 @@ Module entities, has all model schema from api.
 from datetime import datetime
 from pydantic import BaseModel
 
+
 class Book(BaseModel):
     """
     type Book: Books template for been owned and borrowed beteen person.
@@ -14,11 +15,18 @@ class Book(BaseModel):
     :field capa: book cover url.
     :field published_at: day when the book as first released tu public
     """
+
     id: int
     title: str
     isbn: str | None
     cover: str | None
     published_at: datetime | None
+
+    @classmethod
+    def create_from_result(cls, result):
+        book_id, title, isbn, cover, pub_at = result
+        return cls(book_id, title, isbn, cover, pub_at)
+
 
 class Person(BaseModel):
     """
@@ -29,11 +37,13 @@ class Person(BaseModel):
     :field own_books: books which belongs to person
     :field borrowed_books: books borrowed from other people
     """
+
     id: int
     name: str
     age: int
     own_books: list
     borrowed_books: list
+
 
 class OwnedBook(BaseModel):
     """
@@ -41,5 +51,6 @@ class OwnedBook(BaseModel):
     :field owner: person who owners the book.
     :field book: Book belonged to someone.
     """
+
     owner: Person
     book: Book
